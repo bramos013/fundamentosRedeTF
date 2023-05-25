@@ -29,11 +29,11 @@ public class TabelaRoteamento {
     
     public String getTabelaComoString(){
         String tabelaStr = "!"; /* Tabela de roteamento vazia conforme especificado no protocolo */
+        StringBuilder tabelaStrBuilder = new StringBuilder();
+        registros.forEach((registro) -> {
+            tabelaStrBuilder.append("*").append(registro.getIpDestino().toString()).append(";").append(registro.getMetrica().toString());
+        });
         
-        
-        return tabelaStr;
+        return tabelaStrBuilder.toString();
     }
-    
-
-    
 }
