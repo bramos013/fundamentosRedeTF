@@ -3,16 +3,19 @@ package roteador;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MessageSender implements Runnable {
-    TabelaRoteamento tabela; /*Tabela de roteamento */
-    ArrayList<String> vizinhos; /* Lista de IPs dos roteadores vizinhos */
+    private TabelaRoteamento tabela; /*Tabela de roteamento */
+    private ArrayList<String> vizinhos; /* Lista de IPs dos roteadores vizinhos */
+    private AtomicBoolean existeAlteracaoTabela;
 
-    public MessageSender(TabelaRoteamento t, ArrayList<String> v) {
-        tabela = t;
-        vizinhos = v;
+    public MessageSender(TabelaRoteamento tabela, ArrayList<String> vizinhos, AtomicBoolean existeAlteracaoTabela) {
+        this.tabela = tabela;
+        this.vizinhos = vizinhos;
+        this.existeAlteracaoTabela = existeAlteracaoTabela;
     }
 
     @Override
@@ -54,12 +57,15 @@ public class MessageSender implements Runnable {
                  * a tabela de roteamento sofra uma alteração, ela deve ser reenvida aos
                  * vizinho imediatamente.
                  */
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(MessageSender.class.getName()).log(Level.SEVERE, null, ex);
+                if (existeAlteracaoTabela.get()) {
+                    existeAlteracaoTabela.compareAndSet(true, false);
+                } else {
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(MessageSender.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
-
             }
         } catch (SocketException ex) {
             Logger.getLogger(MessageSender.class.getName()).log(Level.SEVERE, null, ex);

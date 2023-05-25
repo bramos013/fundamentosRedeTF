@@ -5,16 +5,19 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class MessageReceiver implements Runnable{
+public class MessageReceiver implements Runnable {
     private TabelaRoteamento tabela;
-    
-    public MessageReceiver(TabelaRoteamento t){
-        tabela = t;
+    private AtomicBoolean existeAlteracaoTabela;
+
+    public MessageReceiver(TabelaRoteamento tabela, AtomicBoolean existeAlteracaoTabela) {
+        this.tabela = tabela;
+        this.existeAlteracaoTabela = existeAlteracaoTabela;
     }
-    
+
     @Override
     public void run() {
         try (DatagramSocket serverSocket = new DatagramSocket(5000)) {
@@ -32,7 +35,7 @@ public class MessageReceiver implements Runnable{
                 }
 
                 /* Transforma a mensagem em string */
-                String tabela_string = new String( receivePacket.getData());
+                String tabela_string = new String(receivePacket.getData());
 
                 /* Obtem o IP de origem da mensagem */
                 InetAddress IPAddress = receivePacket.getAddress();
@@ -43,5 +46,5 @@ public class MessageReceiver implements Runnable{
             Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
 }
