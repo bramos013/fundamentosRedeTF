@@ -51,13 +51,11 @@ public class MessageReceiver implements Runnable {
                  *  mais anúncios de rotas. Desta forma, depois de 30 segundos sem receber mensagens do roteador vizinho em questão,
                  *  as rotas que passam por ele devem ser esquecidas
                  */
-                tabelaRoteamento.atualizaTabela(tabela_string, IPAddress);
+                tabelaRoteamento.atualizaTabela(tabela_string, IPAddress, existeAlteracaoTabela);
 
                 /* TODO Periodicamente, a tabela de roteamento local deverá ser apresentada para o usuário. Além
                 *   disso, alterações na tabela de roteamento deverão ser informadas para os usuários (através de prints)
                 */
-
-                /* TODO atualizar variavel existeAlteracaoTabela quando a tabela sofre alteracao */
             }
         } catch (SocketException ex) {
             Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);

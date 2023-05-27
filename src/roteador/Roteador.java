@@ -24,7 +24,6 @@ public class Roteador {
 
         /* Cria instâncias da tabela de roteamento e das threads de envio e recebimento de mensagens. */
         TabelaRoteamento tabela = new TabelaRoteamento();
-        tabela.inicializaTabela(ipList);
 
         Thread sender = new Thread(new MessageReceiver(tabela, existeAlteracaoTabela));
         Thread receiver = new Thread(new MessageSender(tabela, ipList, existeAlteracaoTabela));

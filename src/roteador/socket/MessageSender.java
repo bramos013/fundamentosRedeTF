@@ -33,6 +33,7 @@ public class MessageSender implements Runnable {
         InetAddress ipAddress = null;
 
         try (DatagramSocket clientSocket = new DatagramSocket()) {
+            boolean firstIteration = true;
             while (true) {
                 /* Pega a tabela de roteamento no formato string, conforme especificado pelo protocolo. */
                 String routingTable = tabelaRoteamento.getTabelaComoString();
@@ -66,6 +67,11 @@ public class MessageSender implements Runnable {
                     } catch (InterruptedException ex) {
                         Logger.getLogger(MessageSender.class.getName()).log(Level.SEVERE, null, ex);
                     }
+                }
+
+                if (firstIteration) {
+                    tabelaRoteamento.inicializaTabela(vizinhos);
+                    firstIteration = false;
                 }
             }
         } catch (SocketException ex) {

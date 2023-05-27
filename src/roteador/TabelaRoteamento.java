@@ -8,7 +8,11 @@ import roteador.dto.RegistroTabelaRoteamento;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 public class TabelaRoteamento {
     private final List<RegistroTabelaRoteamento> registros;
@@ -24,26 +28,54 @@ public class TabelaRoteamento {
         });
     }
 
-    /*
-    * TODO Uma atualização deverá ser feita sempre que:
-    *  - for recebido um IP de Destino não presente na tabela local. Neste caso a rota deve ser adicionada,
-    *    a Métrica deve ser incrementada em 1 e o IP de Saída deve ser o endereço do roteador que ensinou esta informação
-    *  - for recebida uma Métrica menor para um IP Destino presente na tabela local. Neste caso,a Métrica e o IP de Saída devem ser atualizadas
-    *  - um IP Destino deixar de ser divulgado. Neste caso, a rota deve ser retirada da tabela de roteamento
-    * */
-    public void atualizaTabela(String tabela_s, InetAddress IPAddress) {
-        /* Atualize a tabela de rotamento a partir da string recebida. */
-        System.out.println(IPAddress.getHostAddress() + ": " + tabela_s);
+    public void atualizaTabela(String tabela_s, InetAddress IPAddress, AtomicBoolean existeAlteracaoTabela) {
+        List<RegistroTabelaRoteamento> registrosRecebidos = getStringParaTabela(tabela_s, IPAddress);
+        registrosRecebidos.forEach(registroRecebido -> {
+            Optional<RegistroTabelaRoteamento> routeByDestinationIp = registros.stream()
+                    .filter(registro -> registro.getIpDestino().equals(registroRecebido.getIpDestino()))
+                    .findFirst();
+            // Adiciona rota se o IP de destino recebido nao esta na tabela local
+            if (routeByDestinationIp.isEmpty()) {
+                registros.add(registroRecebido);
+                existeAlteracaoTabela.set(true);
+            // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
+            } else if (routeByDestinationIp.get().getMetrica() > registroRecebido.getMetrica()) {
+                RegistroTabelaRoteamento foundRoute = routeByDestinationIp.get();
+                foundRoute.setMetrica(registroRecebido.getMetrica());
+                foundRoute.setIpSaida(registroRecebido.getIpSaida());
+            }
+        });
+
+        // Retira rotas se IP destino deixar de ser divulgado
+        List<RegistroTabelaRoteamento> registrosARemover = registros.stream().filter(registro -> {
+            // se rota presente na tabela possuia este vizinho como saida && o vizinho nao divulgou mais alguma rota com este destino
+            return registro.getIpSaida().equals(IPAddress.getHostAddress())
+                    && registrosRecebidos.stream().noneMatch(registroRecebido -> registroRecebido.getIpDestino().equals(registro.getIpDestino()));
+        }).collect(Collectors.toList());
+
+        if (!registrosARemover.isEmpty()) {
+            registros.removeAll(registrosARemover);
+            existeAlteracaoTabela.set(true);
+        }
     }
 
     public String getTabelaComoString() {
-        // TODO logo que um roteador entrar na rede e não tiver nenhuma rota pré-configurada, deverá anunciar-se para os vizinhos com a msg !
-        String tabelaStr = "!"; /* Tabela de roteamento vazia conforme especificado no protocolo */
+        /* Tabela de roteamento vazia conforme especificado no protocolo */
+        if (registros.isEmpty())
+            return "!";
         StringBuilder tabelaStrBuilder = new StringBuilder();
         registros.forEach((registro) -> {
             tabelaStrBuilder.append("*").append(registro.getIpDestino()).append(";").append(registro.getMetrica().toString());
         });
 
         return tabelaStrBuilder.toString();
+    }
+
+    public List<RegistroTabelaRoteamento> getStringParaTabela(String tabela_s, InetAddress IPAddress) {
+        String[] registrosTabelaStr = tabela_s.split("\\*");
+        return Arrays.stream(registrosTabelaStr).map(registro -> {
+            String[] registroCampos = registro.split(";");
+            return new RegistroTabelaRoteamento(registroCampos[0], Integer.valueOf(registroCampos[1]), IPAddress.getHostAddress());
+        }).collect(Collectors.toList());
     }
 }
