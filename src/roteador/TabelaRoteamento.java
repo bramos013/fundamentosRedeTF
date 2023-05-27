@@ -52,14 +52,13 @@ public class TabelaRoteamento {
         });
 
         // Retira rotas se IP destino deixar de ser divulgado
-        List<RegistroTabelaRoteamento> routesToRemove = routes.stream().filter(route -> {
+        boolean routesWereRemoved = routes.removeIf(route -> {
             // se rota presente na tabela possuia este vizinho como saida && o vizinho nao divulgou mais alguma rota com este destino
             return route.getIpSaida().equals(IPAddress.getHostAddress())
                     && receivedRoutes.stream().noneMatch(receivedRoute -> compareRoutesByDestinationIp.test(receivedRoute, route));
-        }).collect(Collectors.toList());
+        });
 
-        if (!routesToRemove.isEmpty()) {
-            routes.removeAll(routesToRemove);
+        if (routesWereRemoved) {
             tableWasChanged.set(true);
         }
     }
