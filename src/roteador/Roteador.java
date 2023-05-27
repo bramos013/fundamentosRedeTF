@@ -1,3 +1,7 @@
+/*
+ * Trabalho Final da Disciplina de Fundamentos de Redes de Computadores
+ * Grupo: Bruno Ramos, Fernanda Mello, Lucas Salbego, Matheus Pozzer
+ */
 package roteador;
 
 import roteador.socket.MessageReceiver;
