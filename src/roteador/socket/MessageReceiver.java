@@ -11,6 +11,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,17 +27,28 @@ public class MessageReceiver implements Runnable {
 
     @Override
     public void run() {
+        HashMap<InetAddress, Long> connections = new HashMap<>();
+
         try (DatagramSocket serverSocket = new DatagramSocket(5000)) {
             byte[] receiveData = new byte[1024];
 
             while (true) {
                 /* Cria um DatagramPacket */
+
+                connections.forEach((ip, lastConnection) -> {
+                    Long currentTime = System.currentTimeMillis();
+                    if(((lastConnection - currentTime)/1000F) >= 30){
+                        tabelaRoteamento.removeRegistrosPorIP(ip);
+                    }
+                });
+
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 try {
                     /* Reseta o tamanho dos dados do pacote antes de receber */
                     receivePacket.setLength(receiveData.length);
                     /* Aguarda o recebimento de uma mensagem */
                     serverSocket.receive(receivePacket);
+                    
                 } catch (IOException ex) {
                     Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -46,11 +58,8 @@ public class MessageReceiver implements Runnable {
 
                 /* Obtem o IP de origem da mensagem */
                 InetAddress IPAddress = receivePacket.getAddress();
+                connections.put(IPAddress, System.currentTimeMillis());
 
-                /* TODO Um roteador pode sair da rede a qualquer momento. Isso significa que seus vizinhos não receberão
-                 *  mais anúncios de rotas. Desta forma, depois de 30 segundos sem receber mensagens do roteador vizinho em questão,
-                 *  as rotas que passam por ele devem ser esquecidas
-                 */
                 tabelaRoteamento.atualizaTabela(tabela_string, IPAddress, existeAlteracaoTabela);
 
                 /* TODO Periodicamente, a tabela de roteamento local deverá ser apresentada para o usuário. Além

@@ -59,6 +59,13 @@ public class TabelaRoteamento {
         }
     }
 
+    public void removeRegistrosPorIP(InetAddress IPtoRemove, AtomicBoolean existeAlteracaoTabela){
+        boolean hasRemoved = registros.removeIf((registro) -> {
+            return IPtoRemove.getHostAddress().equals(registro.getIpSaida());
+        });
+        if (hasRemoved){existeAlteracaoTabela.set(true);}
+    }
+
     public String getTabelaComoString() {
         /* Tabela de roteamento vazia conforme especificado no protocolo */
         if (registros.isEmpty())
