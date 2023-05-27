@@ -63,11 +63,11 @@ public class TabelaRoteamento {
         }
     }
 
-    public void removeRegistrosPorIP(InetAddress IPtoRemove, AtomicBoolean existeAlteracaoTabela){
-        boolean hasRemoved = registros.removeIf((registro) -> {
-            return IPtoRemove.getHostAddress().equals(registro.getIpSaida());
-        });
-        if (hasRemoved){existeAlteracaoTabela.set(true);}
+    public void removeRegistrosPorIP(InetAddress IPtoRemove, AtomicBoolean tableWasChanged) {
+        boolean hasRemoved = routes.removeIf((route) -> IPtoRemove.getHostAddress().equals(route.getIpSaida()));
+        if (hasRemoved) {
+            tableWasChanged.set(true);
+        }
     }
 
     public String getTabelaComoString() {
