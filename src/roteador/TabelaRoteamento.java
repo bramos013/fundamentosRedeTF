@@ -12,50 +12,54 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 public class TabelaRoteamento {
-    private final List<RegistroTabelaRoteamento> registros;
+    private final List<RegistroTabelaRoteamento> routes;
 
     public TabelaRoteamento() {
-        this.registros = new ArrayList<>();
+        this.routes = new ArrayList<>();
     }
 
-    public void inicializaTabela(List<String> vizinhos) {
-        vizinhos.forEach((vizinho) -> {
+    public void inicializaTabela(List<String> neighbors) {
+        neighbors.forEach((vizinho) -> {
             // cadastra os endereços IPs vizinhos em uma tabela de roteamento com métrica 1 e saída direta
-            this.registros.add(new RegistroTabelaRoteamento(vizinho, 1, vizinho));
+            this.routes.add(new RegistroTabelaRoteamento(vizinho, 1, vizinho));
         });
     }
 
-    public void atualizaTabela(String tabela_s, InetAddress IPAddress, AtomicBoolean existeAlteracaoTabela) {
-        List<RegistroTabelaRoteamento> registrosRecebidos = getStringParaTabela(tabela_s, IPAddress);
-        registrosRecebidos.forEach(registroRecebido -> {
-            Optional<RegistroTabelaRoteamento> routeByDestinationIp = registros.stream()
-                    .filter(registro -> registro.getIpDestino().equals(registroRecebido.getIpDestino()))
+    public void atualizaTabela(String tableStr, InetAddress IPAddress, AtomicBoolean tableWasChanged) {
+        List<RegistroTabelaRoteamento> receivedRoutes = getStringParaTabela(tableStr, IPAddress);
+        BiPredicate<RegistroTabelaRoteamento, RegistroTabelaRoteamento> compareRoutesByDestinationIp = (route1, route2) -> route1.getIpDestino().equals(route2.getIpDestino());
+
+        // Para cada registro recebido do vizinho
+        receivedRoutes.forEach(receivedRoute -> {
+            Optional<RegistroTabelaRoteamento> routeByDestinationIp = routes.stream()
+                    .filter(route -> compareRoutesByDestinationIp.test(route, receivedRoute))
                     .findFirst();
             // Adiciona rota se o IP de destino recebido nao esta na tabela local
             if (routeByDestinationIp.isEmpty()) {
-                registros.add(registroRecebido);
-                existeAlteracaoTabela.set(true);
-            // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
-            } else if (routeByDestinationIp.get().getMetrica() > registroRecebido.getMetrica()) {
+                routes.add(receivedRoute);
+                tableWasChanged.set(true);
+                // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
+            } else if (routeByDestinationIp.get().getMetrica() > receivedRoute.getMetrica()) {
                 RegistroTabelaRoteamento foundRoute = routeByDestinationIp.get();
-                foundRoute.setMetrica(registroRecebido.getMetrica());
-                foundRoute.setIpSaida(registroRecebido.getIpSaida());
+                foundRoute.setMetrica(receivedRoute.getMetrica());
+                foundRoute.setIpSaida(receivedRoute.getIpSaida());
+                tableWasChanged.set(true);
             }
         });
 
         // Retira rotas se IP destino deixar de ser divulgado
-        List<RegistroTabelaRoteamento> registrosARemover = registros.stream().filter(registro -> {
+        boolean routesWereRemoved = routes.removeIf(route -> {
             // se rota presente na tabela possuia este vizinho como saida && o vizinho nao divulgou mais alguma rota com este destino
-            return registro.getIpSaida().equals(IPAddress.getHostAddress())
-                    && registrosRecebidos.stream().noneMatch(registroRecebido -> registroRecebido.getIpDestino().equals(registro.getIpDestino()));
-        }).collect(Collectors.toList());
+            return route.getIpSaida().equals(IPAddress.getHostAddress())
+                    && receivedRoutes.stream().noneMatch(receivedRoute -> compareRoutesByDestinationIp.test(receivedRoute, route));
+        });
 
-        if (!registrosARemover.isEmpty()) {
-            registros.removeAll(registrosARemover);
-            existeAlteracaoTabela.set(true);
+        if (routesWereRemoved) {
+            tableWasChanged.set(true);
         }
     }
 
@@ -68,21 +72,21 @@ public class TabelaRoteamento {
 
     public String getTabelaComoString() {
         /* Tabela de roteamento vazia conforme especificado no protocolo */
-        if (registros.isEmpty())
+        if (routes.isEmpty())
             return "!";
-        StringBuilder tabelaStrBuilder = new StringBuilder();
-        registros.forEach((registro) -> {
-            tabelaStrBuilder.append("*").append(registro.getIpDestino()).append(";").append(registro.getMetrica().toString());
+        StringBuilder tableStrBuilder = new StringBuilder();
+        routes.forEach((route) -> {
+            tableStrBuilder.append("*").append(route.getIpDestino()).append(";").append(route.getMetrica().toString());
         });
 
-        return tabelaStrBuilder.toString();
+        return tableStrBuilder.toString();
     }
 
-    public List<RegistroTabelaRoteamento> getStringParaTabela(String tabela_s, InetAddress IPAddress) {
-        String[] registrosTabelaStr = tabela_s.split("\\*");
-        return Arrays.stream(registrosTabelaStr).map(registro -> {
-            String[] registroCampos = registro.split(";");
-            return new RegistroTabelaRoteamento(registroCampos[0], Integer.valueOf(registroCampos[1]), IPAddress.getHostAddress());
+    public List<RegistroTabelaRoteamento> getStringParaTabela(String tableStr, InetAddress IPAddress) {
+        String[] routesStr = tableStr.split("\\*");
+        return Arrays.stream(routesStr).map(route -> {
+            String[] routeFields = route.split(";");
+            return new RegistroTabelaRoteamento(routeFields[0], Integer.valueOf(routeFields[1]), IPAddress.getHostAddress());
         }).collect(Collectors.toList());
     }
 }
