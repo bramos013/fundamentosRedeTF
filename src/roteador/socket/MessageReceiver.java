@@ -38,7 +38,7 @@ public class MessageReceiver implements Runnable {
                 connections.forEach((ip, lastConnection) -> {
                     Long currentTime = System.currentTimeMillis();
                     if(((lastConnection - currentTime)/1000F) >= 30){
-                        tabelaRoteamento.removeRegistrosPorIP(ip);
+                        tabelaRoteamento.removeRegistrosPorIP(ip, existeAlteracaoTabela);
                     }
                 });
 
