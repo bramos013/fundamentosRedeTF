@@ -7,10 +7,7 @@ package roteador;
 import roteador.dto.RegistroTabelaRoteamento;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
@@ -61,6 +58,10 @@ public class TabelaRoteamento {
         if (routesWereRemoved) {
             tableWasChanged.set(true);
         }
+
+        if (tableWasChanged.get()) {
+            System.out.println(this.toString());
+        }
     }
 
     public void removeRegistrosPorIP(InetAddress IPtoRemove, AtomicBoolean tableWasChanged) {
@@ -86,7 +87,20 @@ public class TabelaRoteamento {
         String[] routesStr = tableStr.split("\\*");
         return Arrays.stream(routesStr).map(route -> {
             String[] routeFields = route.split(";");
-            return new RegistroTabelaRoteamento(routeFields[0], Integer.valueOf(routeFields[1]), IPAddress.getHostAddress());
-        }).collect(Collectors.toList());
+            if (routeFields.length > 1) {
+                return new RegistroTabelaRoteamento(routeFields[0], Integer.valueOf(routeFields[1]), IPAddress.getHostAddress());
+            }
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("DESTINO | METRICA | SAIDA\n");
+        routes.forEach(route -> {
+            stringBuilder.append(route.getIpDestino()).append(" | ").append(route.getMetrica()).append(" | ").append(route.getIpDestino()).append("\n");
+        });
+        return stringBuilder.toString();
     }
 }

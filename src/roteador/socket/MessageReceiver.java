@@ -61,10 +61,7 @@ public class MessageReceiver implements Runnable {
                 connections.put(IPAddress, System.currentTimeMillis());
 
                 tabelaRoteamento.atualizaTabela(tabela_string, IPAddress, existeAlteracaoTabela);
-
-                /* TODO Periodicamente, a tabela de roteamento local deverá ser apresentada para o usuário. Além
-                *   disso, alterações na tabela de roteamento deverão ser informadas para os usuários (através de prints)
-                */
+                System.out.println(tabelaRoteamento.toString());
             }
         } catch (SocketException ex) {
             Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);
