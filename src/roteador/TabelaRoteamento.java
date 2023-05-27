@@ -1,5 +1,7 @@
 package roteador;
 
+import roteador.dto.RegistroTabelaRoteamento;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +34,7 @@ public class TabelaRoteamento {
         String tabelaStr = "!"; /* Tabela de roteamento vazia conforme especificado no protocolo */
         StringBuilder tabelaStrBuilder = new StringBuilder();
         registros.forEach((registro) -> {
-            tabelaStrBuilder.append("*").append(registro.getIpDestino().toString()).append(";").append(registro.getMetrica().toString());
+            tabelaStrBuilder.append("*").append(registro.getIpDestino()).append(";").append(registro.getMetrica().toString());
         });
 
         return tabelaStrBuilder.toString();

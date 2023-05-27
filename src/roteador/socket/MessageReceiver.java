@@ -1,4 +1,6 @@
-package roteador;
+package roteador.socket;
+
+import roteador.TabelaRoteamento;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

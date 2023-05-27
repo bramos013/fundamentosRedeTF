@@ -1,4 +1,4 @@
-package roteador;
+package roteador.dto;
 
 public class RegistroTabelaRoteamento {
     private String ipDestino;
