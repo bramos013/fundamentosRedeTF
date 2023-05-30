@@ -37,12 +37,13 @@ public class TabelaRoteamento {
                     .findFirst();
             // Adiciona rota se o IP de destino recebido nao esta na tabela local
             if (routeByDestinationIp.isEmpty()) {
+                receivedRoute.setMetrica(receivedRoute.getMetrica() + 1);
                 routes.add(receivedRoute);
                 tableWasChanged.set(true);
                 // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
-            } else if (routeByDestinationIp.get().getMetrica() > receivedRoute.getMetrica()) {
+            } else if (routeByDestinationIp.get().getMetrica() > (receivedRoute.getMetrica() + 1)) {
                 RegistroTabelaRoteamento foundRoute = routeByDestinationIp.get();
-                foundRoute.setMetrica(receivedRoute.getMetrica());
+                foundRoute.setMetrica(receivedRoute.getMetrica() + 1);
                 foundRoute.setIpSaida(receivedRoute.getIpSaida());
                 tableWasChanged.set(true);
             }
