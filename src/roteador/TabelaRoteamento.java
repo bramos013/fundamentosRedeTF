@@ -7,6 +7,7 @@ package roteador;
 import roteador.dto.RegistroTabelaRoteamento;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
@@ -30,24 +31,40 @@ public class TabelaRoteamento {
         List<RegistroTabelaRoteamento> receivedRoutes = getStringParaTabela(tableStr, IPAddress);
         BiPredicate<RegistroTabelaRoteamento, RegistroTabelaRoteamento> compareRoutesByDestinationIp = (route1, route2) -> route1.getIpDestino().equals(route2.getIpDestino());
 
+        System.out.println(routes);
+
         // Para cada registro recebido do vizinho
-        receivedRoutes.forEach(receivedRoute -> {
-            Optional<RegistroTabelaRoteamento> routeByDestinationIp = routes.stream()
-                    .filter(route -> compareRoutesByDestinationIp.test(route, receivedRoute))
-                    .findFirst();
-            // Adiciona rota se o IP de destino recebido nao esta na tabela local
-            if (routeByDestinationIp.isEmpty()) {
-                receivedRoute.setMetrica(receivedRoute.getMetrica() + 1);
-                routes.add(receivedRoute);
-                tableWasChanged.set(true);
-                // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
-            } else if (routeByDestinationIp.get().getMetrica() > (receivedRoute.getMetrica() + 1)) {
-                RegistroTabelaRoteamento foundRoute = routeByDestinationIp.get();
-                foundRoute.setMetrica(receivedRoute.getMetrica() + 1);
-                foundRoute.setIpSaida(receivedRoute.getIpSaida());
-                tableWasChanged.set(true);
-            }
-        });
+        receivedRoutes.stream()
+                .filter(receivedRoute -> {
+                    try {
+                        return !receivedRoute.getIpDestino().equals(InetAddress.getLocalHost().getHostAddress());
+                    } catch (UnknownHostException e) {
+                        return true;
+                    }
+                })
+                .forEach(receivedRoute -> {
+                    System.out.println("Received route: " + receivedRoute);
+                    Optional<RegistroTabelaRoteamento> routeByDestinationIp = routes.stream()
+                            .filter(route -> compareRoutesByDestinationIp.test(route, receivedRoute))
+                            .findFirst();
+
+                    routeByDestinationIp.ifPresent(registroTabelaRoteamento -> System.out.println("Found route: " + registroTabelaRoteamento));
+
+                    // Adiciona rota se o IP de destino recebido nao esta na tabela local
+                    if (routeByDestinationIp.isEmpty()) {
+                        System.out.println("aqui1");
+                        receivedRoute.setMetrica(receivedRoute.getMetrica() + 1);
+                        routes.add(receivedRoute);
+                        tableWasChanged.set(true);
+                        // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
+                    } else if (routeByDestinationIp.get().getMetrica() > (receivedRoute.getMetrica() + 1)) {
+                        System.out.println("aqui2");
+                        RegistroTabelaRoteamento foundRoute = routeByDestinationIp.get();
+                        foundRoute.setMetrica(receivedRoute.getMetrica() + 1);
+                        foundRoute.setIpSaida(receivedRoute.getIpSaida());
+                        tableWasChanged.set(true);
+                    }
+                });
 
         // Retira rotas se IP destino deixar de ser divulgado
         boolean routesWereRemoved = routes.removeIf(route -> {

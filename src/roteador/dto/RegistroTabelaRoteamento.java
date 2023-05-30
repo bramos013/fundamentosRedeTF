@@ -38,4 +38,9 @@ public class RegistroTabelaRoteamento {
     public void setIpSaida(String ipSaida) {
         this.ipSaida = ipSaida;
     }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("Destino: ").append(ipDestino).append("  Metrica: ").append(metrica).append("  Saida: ").append(ipSaida).toString();
+    }
 }
