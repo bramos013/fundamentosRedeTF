@@ -33,7 +33,15 @@ public class TabelaRoteamento {
 
         System.out.println(routes);
 
+        String teste = "";
+        try {
+            teste = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+
         // Para cada registro recebido do vizinho
+        System.out.println("Ip proprio: " + teste);
         receivedRoutes.stream()
                 .filter(receivedRoute -> {
                     try {
