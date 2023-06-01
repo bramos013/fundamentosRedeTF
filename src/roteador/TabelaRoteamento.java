@@ -112,7 +112,7 @@ public class TabelaRoteamento {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("DESTINO | METRICA | SAIDA\n");
         routes.forEach(route -> {
-            stringBuilder.append(route.getIpDestino()).append(" | ").append(route.getMetrica()).append(" | ").append(route.getIpDestino()).append("\n");
+            stringBuilder.append(route.getIpDestino()).append(" | ").append(route.getMetrica()).append(" | ").append(route.getIpSaida()).append("\n");
         });
         return stringBuilder.toString();
     }
