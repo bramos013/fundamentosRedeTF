@@ -7,7 +7,6 @@ package roteador;
 import roteador.dto.RegistroTabelaRoteamento;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
@@ -15,9 +14,11 @@ import java.util.stream.Collectors;
 
 public class TabelaRoteamento {
     private final List<RegistroTabelaRoteamento> routes;
+    private final String currentHostIpAddress;
 
-    public TabelaRoteamento() {
+    public TabelaRoteamento(String currentHostIpAddress) {
         this.routes = new ArrayList<>();
+        this.currentHostIpAddress = currentHostIpAddress;
     }
 
     public void inicializaTabela(List<String> neighbors) {
@@ -33,23 +34,9 @@ public class TabelaRoteamento {
 
         System.out.println(routes);
 
-        String teste = "";
-        try {
-            teste = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-
         // Para cada registro recebido do vizinho
-        System.out.println("Ip proprio: " + teste);
         receivedRoutes.stream()
-                .filter(receivedRoute -> {
-                    try {
-                        return !receivedRoute.getIpDestino().equals(InetAddress.getLocalHost().getHostAddress());
-                    } catch (UnknownHostException e) {
-                        return true;
-                    }
-                })
+                .filter(receivedRoute -> !receivedRoute.getIpDestino().equals(currentHostIpAddress))
                 .forEach(receivedRoute -> {
                     System.out.println("Received route: " + receivedRoute);
                     Optional<RegistroTabelaRoteamento> routeByDestinationIp = routes.stream()

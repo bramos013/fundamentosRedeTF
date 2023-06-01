@@ -16,23 +16,17 @@ import java.util.logging.Logger;
 public class MessageReceiver implements Runnable {
     private TabelaRoteamento tabelaRoteamento;
     private AtomicBoolean existeAlteracaoTabela;
-    private NetworkInterface networkInterface;
 
     public MessageReceiver(TabelaRoteamento tabelaRoteamento, AtomicBoolean existeAlteracaoTabela) {
         this.tabelaRoteamento = tabelaRoteamento;
         this.existeAlteracaoTabela = existeAlteracaoTabela;
-        try {
-            this.networkInterface = NetworkInterface.getByName("Intel(R) Ethernet Connection (5) I219-V");
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     public void run() {
         HashMap<InetAddress, Long> connections = new HashMap<>();
 
-        try (DatagramSocket serverSocket = new DatagramSocket(new InetSocketAddress(networkInterface.getInetAddresses().nextElement(),5000))) {
+        try (DatagramSocket serverSocket = new DatagramSocket(5000)) {
             byte[] receiveData = new byte[1024];
 
             while (true) {

@@ -15,6 +15,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Roteador {
 
     public static void main(String[] args) throws IOException {
+        if (args.length < 1) {
+            System.err.println("ERRO: endereço IP da maquina deve ser informado por parametro");
+            System.exit(1);
+        }
+        String ipAddress = args[0];
         /* Le arquivo de entrada com lista de enderecos IPs dos roteadores vizinhos. */
         List<String> ipList = FileReader.readLinesFromFile("IPVizinhos.txt");
 
@@ -23,7 +28,7 @@ public class Roteador {
         AtomicBoolean existeAlteracaoTabela = new AtomicBoolean();
 
         /* Cria instâncias da tabela de roteamento e das threads de envio e recebimento de mensagens. */
-        TabelaRoteamento tabela = new TabelaRoteamento();
+        TabelaRoteamento tabela = new TabelaRoteamento(ipAddress);
 
         Thread sender = new Thread(new MessageReceiver(tabela, existeAlteracaoTabela));
         Thread receiver = new Thread(new MessageSender(tabela, ipList, existeAlteracaoTabela));
