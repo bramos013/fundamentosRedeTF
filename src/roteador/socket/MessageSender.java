@@ -41,6 +41,12 @@ public class MessageSender implements Runnable {
                 /* Converte string para array de bytes para envio pelo socket. */
                 dataToSend = routingTable.getBytes();
 
+
+                if (firstIteration) {
+                    tabelaRoteamento.inicializaTabela(vizinhos);
+                    firstIteration = false;
+                }
+
                 /* Anuncia a tabela de roteamento para cada um dos vizinhos */
                 for (String ip : vizinhos) {
                     try {
@@ -69,10 +75,6 @@ public class MessageSender implements Runnable {
                     }
                 }
 
-                if (firstIteration) {
-                    tabelaRoteamento.inicializaTabela(vizinhos);
-                    firstIteration = false;
-                }
             }
         } catch (SocketException ex) {
             Logger.getLogger(MessageSender.class.getName()).log(Level.SEVERE, null, ex);

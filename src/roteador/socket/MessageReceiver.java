@@ -1,7 +1,7 @@
 /*
-* Trabalho Final da Disciplina de Fundamentos de Redes de Computadores
-* Grupo: Bruno Ramos, Fernanda Mello, Lucas Salbego, Matheus Pozzer
-*/
+ * Trabalho Final da Disciplina de Fundamentos de Redes de Computadores
+ * Grupo: Bruno Ramos, Fernanda Mello, Lucas Salbego, Matheus Pozzer
+ */
 package roteador.socket;
 
 import roteador.TabelaRoteamento;
@@ -45,7 +45,7 @@ public class MessageReceiver implements Runnable {
                     receivePacket.setLength(receiveData.length);
                     /* Aguarda o recebimento de uma mensagem */
                     serverSocket.receive(receivePacket);
-                    
+
                 } catch (IOException ex) {
                     Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);
                 }

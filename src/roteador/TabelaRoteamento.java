@@ -65,7 +65,8 @@ public class TabelaRoteamento {
         boolean routesWereRemoved = routes.removeIf(route -> {
             // se rota presente na tabela possuia este vizinho como saida && o vizinho nao divulgou mais alguma rota com este destino
             return route.getIpSaida().equals(IPAddress.getHostAddress())
-                    && receivedRoutes.stream().noneMatch(receivedRoute -> compareRoutesByDestinationIp.test(receivedRoute, route));
+                    && receivedRoutes.stream().noneMatch(receivedRoute -> compareRoutesByDestinationIp.test(receivedRoute, route))
+                    && route.getMetrica() != 1;
         });
 
         if (routesWereRemoved) {
