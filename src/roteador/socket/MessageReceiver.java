@@ -9,22 +9,27 @@ import roteador.TabelaRoteamento;
 import java.io.IOException;
 import java.net.*;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MessageReceiver implements Runnable {
     private TabelaRoteamento tabelaRoteamento;
+    private List<String> vizinhos; /* Lista de IPs dos roteadores vizinhos */
     private AtomicBoolean existeAlteracaoTabela;
 
-    public MessageReceiver(TabelaRoteamento tabelaRoteamento, AtomicBoolean existeAlteracaoTabela) {
+    public MessageReceiver(TabelaRoteamento tabelaRoteamento, List<String> vizinhos, AtomicBoolean existeAlteracaoTabela) {
         this.tabelaRoteamento = tabelaRoteamento;
+        this.vizinhos = vizinhos;
         this.existeAlteracaoTabela = existeAlteracaoTabela;
     }
 
     @Override
     public void run() {
-        HashMap<InetAddress, Long> connections = new HashMap<>();
+        Map<String, Long> connections = new HashMap<>();
+        inicializaConexoesDeVizinhos(connections);
 
         try (DatagramSocket serverSocket = new DatagramSocket(5000)) {
             byte[] receiveData = new byte[1024];
@@ -55,7 +60,7 @@ public class MessageReceiver implements Runnable {
 
                 /* Obtem o IP de origem da mensagem */
                 InetAddress IPAddress = receivePacket.getAddress();
-                connections.put(IPAddress, System.currentTimeMillis());
+                connections.put(IPAddress.getHostAddress(), System.currentTimeMillis());
 
                 tabelaRoteamento.atualizaTabela(tabela_string, IPAddress, existeAlteracaoTabela);
                 System.out.println(tabelaRoteamento.toString());
@@ -65,4 +70,7 @@ public class MessageReceiver implements Runnable {
         }
     }
 
+    private void inicializaConexoesDeVizinhos(Map<String, Long> connections) {
+        vizinhos.forEach(vizinho -> connections.put(vizinho, System.currentTimeMillis()));
+    }
 }

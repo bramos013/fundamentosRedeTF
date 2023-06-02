@@ -78,8 +78,8 @@ public class TabelaRoteamento {
         }
     }
 
-    public void removeRegistrosPorIP(InetAddress IPtoRemove, AtomicBoolean tableWasChanged) {
-        boolean hasRemoved = routes.removeIf((route) -> IPtoRemove.getHostAddress().equals(route.getIpSaida()));
+    public void removeRegistrosPorIP(String IPtoRemove, AtomicBoolean tableWasChanged) {
+        boolean hasRemoved = routes.removeIf((route) -> IPtoRemove.equals(route.getIpSaida()));
         if (hasRemoved) {
             tableWasChanged.set(true);
         }
