@@ -4,7 +4,7 @@
  */
 package roteador.socket;
 
-import roteador.TabelaRoteamento;
+import roteador.RoutingTable;
 
 import java.io.IOException;
 import java.net.*;
@@ -16,11 +16,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MessageReceiver implements Runnable {
-    private TabelaRoteamento routingTable;
+    private RoutingTable routingTable;
     private List<String> neighbors; /* Lista de IPs dos roteadores vizinhos */
     private AtomicBoolean tableWasChanged;
 
-    public MessageReceiver(TabelaRoteamento routingTable, List<String> neighbors, AtomicBoolean tableWasChanged) {
+    public MessageReceiver(RoutingTable routingTable, List<String> neighbors, AtomicBoolean tableWasChanged) {
         this.routingTable = routingTable;
         this.neighbors = neighbors;
         this.tableWasChanged = tableWasChanged;

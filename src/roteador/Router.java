@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Roteador {
+public class Router {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 1) {
@@ -28,7 +28,7 @@ public class Roteador {
         AtomicBoolean tableWasChanged = new AtomicBoolean();
 
         /* Cria instâncias da tabela de roteamento e das threads de envio e recebimento de mensagens. */
-        TabelaRoteamento routingTable = new TabelaRoteamento(ipAddress);
+        RoutingTable routingTable = new RoutingTable(ipAddress);
 
         Thread sender = new Thread(new MessageReceiver(routingTable, neighborIpList, tableWasChanged));
         Thread receiver = new Thread(new MessageSender(routingTable, neighborIpList, tableWasChanged));

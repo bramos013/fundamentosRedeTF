@@ -4,7 +4,7 @@
  */
 package roteador.util;
 
-import roteador.Roteador;
+import roteador.Router;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -27,7 +27,7 @@ public class FileReader {
 
             return lines;
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(Roteador.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Router.class.getName()).log(Level.SEVERE, null, ex);
             return Collections.emptyList();
         }
     }
