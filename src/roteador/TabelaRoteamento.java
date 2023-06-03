@@ -21,18 +21,18 @@ public class TabelaRoteamento {
         this.currentHostIpAddress = currentHostIpAddress;
     }
 
-    public void inicializaTabela(List<String> neighbors) {
-        neighbors.forEach((vizinho) -> {
+    public void initializeTable(List<String> neighbors) {
+        neighbors.forEach((neighbor) -> {
             // cadastra os endereços IPs vizinhos em uma tabela de roteamento com métrica 1 e saída direta
-            this.routes.add(new RegistroTabelaRoteamento(vizinho, 1, vizinho));
+            this.routes.add(new RegistroTabelaRoteamento(neighbor, 1, neighbor));
         });
     }
 
-    public void atualizaTabela(String tableStr, InetAddress IPAddress, AtomicBoolean tableWasChanged) {
-        List<RegistroTabelaRoteamento> receivedRoutes = getStringParaTabela(tableStr, IPAddress);
+    public void updateTable(String tableStr, InetAddress IPAddress, AtomicBoolean tableWasChanged) {
+        List<RegistroTabelaRoteamento> receivedRoutes = convertStringToTableRoutes(tableStr, IPAddress);
         BiPredicate<RegistroTabelaRoteamento, RegistroTabelaRoteamento> compareRoutesByDestinationIp = (route1, route2) -> route1.getIpDestino().equals(route2.getIpDestino());
 
-        System.out.println(routes);
+        System.out.println("ROUTES BEFORE TABLE UPDATE:\n" + this.toString());
 
         // Para cada registro recebido do vizinho
         receivedRoutes.stream()
@@ -43,17 +43,17 @@ public class TabelaRoteamento {
                             .filter(route -> compareRoutesByDestinationIp.test(route, receivedRoute))
                             .findFirst();
 
-                    routeByDestinationIp.ifPresent(registroTabelaRoteamento -> System.out.println("Found route: " + registroTabelaRoteamento));
+                    routeByDestinationIp.ifPresent(foundRoute -> System.out.println("Found route with same destination IP address: " + foundRoute.getIpDestino()));
 
                     // Adiciona rota se o IP de destino recebido nao esta na tabela local
                     if (routeByDestinationIp.isEmpty()) {
-                        System.out.println("aqui1");
+                        System.out.println("Did not have route with destination IP " + receivedRoute.getIpDestino() + ". Adding new route");
                         receivedRoute.setMetrica(receivedRoute.getMetrica() + 1);
                         routes.add(receivedRoute);
                         tableWasChanged.set(true);
                         // Atualiza metrica e saida se for recebida metrica menor para um IP destino presente na tabela
                     } else if (routeByDestinationIp.get().getMetrica() > (receivedRoute.getMetrica() + 1)) {
-                        System.out.println("aqui2");
+                        System.out.println("Received route has smaller metric than current route. Updating route to destination IP " + receivedRoute.getIpDestino());
                         RegistroTabelaRoteamento foundRoute = routeByDestinationIp.get();
                         foundRoute.setMetrica(receivedRoute.getMetrica() + 1);
                         foundRoute.setIpSaida(receivedRoute.getIpSaida());
@@ -70,22 +70,23 @@ public class TabelaRoteamento {
         });
 
         if (routesWereRemoved) {
+            System.out.println("Removed routes because host stopped sending them");
             tableWasChanged.set(true);
         }
 
         if (tableWasChanged.get()) {
-            System.out.println(this.toString());
+            System.out.println("ROUTES WERE CHANGED AFTER TABLE UPDATE. CURRENT TABLE:\n" + this.toString());
         }
     }
 
-    public void removeRegistrosPorIP(String IPtoRemove, AtomicBoolean tableWasChanged) {
+    public void removeRoutesByOutputIPAddress(String IPtoRemove, AtomicBoolean tableWasChanged) {
         boolean hasRemoved = routes.removeIf((route) -> IPtoRemove.equals(route.getIpSaida()));
         if (hasRemoved) {
             tableWasChanged.set(true);
         }
     }
 
-    public String getTabelaComoString() {
+    public String getTableAsString() {
         /* Tabela de roteamento vazia conforme especificado no protocolo */
         if (routes.isEmpty())
             return "!";
@@ -97,7 +98,7 @@ public class TabelaRoteamento {
         return tableStrBuilder.toString();
     }
 
-    public List<RegistroTabelaRoteamento> getStringParaTabela(String tableStr, InetAddress IPAddress) {
+    public List<RegistroTabelaRoteamento> convertStringToTableRoutes(String tableStr, InetAddress IPAddress) {
         String[] routesStr = tableStr.split("\\*");
         return Arrays.stream(routesStr).map(route -> {
             String[] routeFields = route.split(";");

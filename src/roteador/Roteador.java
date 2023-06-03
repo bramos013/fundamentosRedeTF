@@ -21,20 +21,19 @@ public class Roteador {
         }
         String ipAddress = args[0];
         /* Le arquivo de entrada com lista de enderecos IPs dos roteadores vizinhos. */
-        List<String> ipList = FileReader.readLinesFromFile("IPVizinhos.txt");
+        List<String> neighborIpList = FileReader.readLinesFromFile("IPVizinhos.txt");
 
         /* Cria variavel AtomicBoolean para que ambas threads validem e atualizem
         se existem alteracoes na tabela nao enviadas para os vizinhos */
-        AtomicBoolean existeAlteracaoTabela = new AtomicBoolean();
+        AtomicBoolean tableWasChanged = new AtomicBoolean();
 
         /* Cria instâncias da tabela de roteamento e das threads de envio e recebimento de mensagens. */
-        TabelaRoteamento tabela = new TabelaRoteamento(ipAddress);
+        TabelaRoteamento routingTable = new TabelaRoteamento(ipAddress);
 
-        Thread sender = new Thread(new MessageReceiver(tabela, ipList, existeAlteracaoTabela));
-        Thread receiver = new Thread(new MessageSender(tabela, ipList, existeAlteracaoTabela));
+        Thread sender = new Thread(new MessageReceiver(routingTable, neighborIpList, tableWasChanged));
+        Thread receiver = new Thread(new MessageSender(routingTable, neighborIpList, tableWasChanged));
 
         sender.start();
         receiver.start();
-
     }
 }

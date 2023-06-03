@@ -16,34 +16,36 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MessageReceiver implements Runnable {
-    private TabelaRoteamento tabelaRoteamento;
-    private List<String> vizinhos; /* Lista de IPs dos roteadores vizinhos */
-    private AtomicBoolean existeAlteracaoTabela;
+    private TabelaRoteamento routingTable;
+    private List<String> neighbors; /* Lista de IPs dos roteadores vizinhos */
+    private AtomicBoolean tableWasChanged;
 
-    public MessageReceiver(TabelaRoteamento tabelaRoteamento, List<String> vizinhos, AtomicBoolean existeAlteracaoTabela) {
-        this.tabelaRoteamento = tabelaRoteamento;
-        this.vizinhos = vizinhos;
-        this.existeAlteracaoTabela = existeAlteracaoTabela;
+    public MessageReceiver(TabelaRoteamento routingTable, List<String> neighbors, AtomicBoolean tableWasChanged) {
+        this.routingTable = routingTable;
+        this.neighbors = neighbors;
+        this.tableWasChanged = tableWasChanged;
     }
 
     @Override
     public void run() {
         Map<String, Long> connections = new HashMap<>();
-        inicializaConexoesDeVizinhos(connections);
+        initializeNeighborConnections(connections);
 
         try (DatagramSocket serverSocket = new DatagramSocket(5000)) {
             byte[] receiveData = new byte[1024];
+            serverSocket.setSoTimeout(30000);
 
             while (true) {
-                /* Cria um DatagramPacket */
-
                 connections.forEach((ip, lastConnection) -> {
                     Long currentTime = System.currentTimeMillis();
-                    if(((lastConnection - currentTime)/1000F) >= 30){
-                        tabelaRoteamento.removeRegistrosPorIP(ip, existeAlteracaoTabela);
+                    Float seconds = ((currentTime - lastConnection)/1000F);
+                    if(seconds >= 30) {
+                        System.out.println("Removing routes from neighbor " + ip + ". Stopped received routes from him for " + seconds + " seconds");
+                        routingTable.removeRoutesByOutputIPAddress(ip, tableWasChanged);
                     }
                 });
 
+                /* Cria um DatagramPacket */
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 try {
                     /* Reseta o tamanho dos dados do pacote antes de receber */
@@ -51,26 +53,29 @@ public class MessageReceiver implements Runnable {
                     /* Aguarda o recebimento de uma mensagem */
                     serverSocket.receive(receivePacket);
 
+                    /* Transforma a mensagem em string */
+                    String receivedString = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength());
+
+                    /* Obtem o IP de origem da mensagem */
+                    InetAddress IPAddress = receivePacket.getAddress();
+                    connections.put(IPAddress.getHostAddress(), System.currentTimeMillis());
+
+                    System.out.println("RECEIVED MESSAGE FROM IP ADDRESS " + IPAddress.getHostAddress() + ": " + receivedString);
+
+                    routingTable.updateTable(receivedString, IPAddress, tableWasChanged);
+
+                    System.out.println(routingTable.toString());
+
                 } catch (IOException ex) {
                     Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);
                 }
-
-                /* Transforma a mensagem em string */
-                String tabela_string = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength());
-
-                /* Obtem o IP de origem da mensagem */
-                InetAddress IPAddress = receivePacket.getAddress();
-                connections.put(IPAddress.getHostAddress(), System.currentTimeMillis());
-
-                tabelaRoteamento.atualizaTabela(tabela_string, IPAddress, existeAlteracaoTabela);
-                System.out.println(tabelaRoteamento.toString());
             }
         } catch (SocketException ex) {
             Logger.getLogger(MessageReceiver.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    private void inicializaConexoesDeVizinhos(Map<String, Long> connections) {
-        vizinhos.forEach(vizinho -> connections.put(vizinho, System.currentTimeMillis()));
+    private void initializeNeighborConnections(Map<String, Long> connections) {
+        neighbors.forEach(neighbor -> connections.put(neighbor, System.currentTimeMillis()));
     }
 }
