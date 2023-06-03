@@ -10,29 +10,41 @@ import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class RoutingTable {
     private final List<RoutingTableRegister> routes;
     private final String currentHostIpAddress;
+    private final List<String> neighbors;
 
-    public RoutingTable(String currentHostIpAddress) {
+    public RoutingTable(String currentHostIpAddress, List<String> neighbors) {
         this.routes = new ArrayList<>();
         this.currentHostIpAddress = currentHostIpAddress;
+        this.neighbors = neighbors;
     }
 
-    public void initializeTable(List<String> neighbors) {
-        neighbors.forEach((neighbor) -> {
+    public void initializeTable() {
+        this.neighbors.forEach((neighbor) -> {
             // cadastra os endereços IPs vizinhos em uma tabela de roteamento com métrica 1 e saída direta
-            this.routes.add(new RoutingTableRegister(neighbor, 1, neighbor));
+            addNeighborRoute(neighbor);
         });
+    }
+
+    private void addNeighborRoute(String neighbor) {
+        this.routes.add(new RoutingTableRegister(neighbor, 1, neighbor));
     }
 
     public void updateTable(String tableStr, InetAddress IPAddress, AtomicBoolean tableWasChanged) {
         List<RoutingTableRegister> receivedRoutes = convertStringToTableRoutes(tableStr, IPAddress);
         BiPredicate<RoutingTableRegister, RoutingTableRegister> compareRoutesByDestinationIp = (route1, route2) -> route1.getDestinationIp().equals(route2.getDestinationIp());
+        Predicate<String> hasRouteToNeighbor = (neighborIp) -> this.routes.stream().anyMatch(route -> route.getDestinationIp().equals(neighborIp) && route.getMetric() == 1);
 
         System.out.println("ROUTES BEFORE TABLE UPDATE:\n" + this.toString());
+
+        if (neighbors.contains(IPAddress.getHostAddress()) && !hasRouteToNeighbor.test(IPAddress.getHostAddress())) {
+            addNeighborRoute(IPAddress.getHostAddress());
+        }
 
         // Para cada registro recebido do vizinho
         receivedRoutes.stream()

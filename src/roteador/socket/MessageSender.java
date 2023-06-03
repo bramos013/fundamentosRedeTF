@@ -44,7 +44,7 @@ public class MessageSender implements Runnable {
 
                 if (firstIteration) {
                     System.out.println("Initializing my routing table with neighbor routes");
-                    this.routingTable.initializeTable(neighbors);
+                    this.routingTable.initializeTable();
                     firstIteration = false;
                 }
 

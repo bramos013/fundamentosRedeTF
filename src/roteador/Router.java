@@ -28,7 +28,7 @@ public class Router {
         AtomicBoolean tableWasChanged = new AtomicBoolean();
 
         /* Cria instâncias da tabela de roteamento e das threads de envio e recebimento de mensagens. */
-        RoutingTable routingTable = new RoutingTable(ipAddress);
+        RoutingTable routingTable = new RoutingTable(ipAddress, neighborIpList);
 
         Thread sender = new Thread(new MessageReceiver(routingTable, neighborIpList, tableWasChanged));
         Thread receiver = new Thread(new MessageSender(routingTable, neighborIpList, tableWasChanged));
